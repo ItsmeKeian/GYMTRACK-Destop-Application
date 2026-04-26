@@ -334,7 +334,8 @@ namespace GymTrack
 
         private void BtnRegister_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Member Registration - Coming Soon!");
+            MemberRegistrationForm regForm = new MemberRegistrationForm();
+            regForm.ShowDialog();
         }
 
         private void BtnView_Click(object sender, EventArgs e)

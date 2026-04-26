@@ -5,11 +5,11 @@ namespace GymTrack
 {
     public class DatabaseHelper
     {
+        private static string masterConnection =
+            @"Server=(localdb)\MSSQLLocalDB;Integrated Security=True;";
+
         private static string connectionString =
-         @"Server=(localdb)\MSSQLLocalDB;
-          Integrated Security=True;
-          AttachDbFilename=|DataDirectory|\GymTrackDB.mdf;
-          User Instance=False;";
+            @"Server=(localdb)\MSSQLLocalDB;Database=GymTrackDB;Integrated Security=True;";
 
         public static SqlConnection GetConnection()
         {
@@ -18,11 +18,23 @@ namespace GymTrack
 
         public static void InitializeDatabase()
         {
-            using (var conn = GetConnection())
+            // Step 1: Create database if not exists
+            using (var conn = new SqlConnection(masterConnection))
+            {
+                conn.Open();
+                string createDb = @"
+                    IF NOT EXISTS (SELECT name FROM sys.databases 
+                                   WHERE name = 'GymTrackDB')
+                    CREATE DATABASE GymTrackDB";
+                new SqlCommand(createDb, conn).ExecuteNonQuery();
+            }
+
+            // Step 2: Create tables
+            using (var conn = new SqlConnection(connectionString))
             {
                 conn.Open();
 
-                string sql = @"
+                string createTables = @"
                 IF NOT EXISTS (SELECT * FROM sysobjects 
                                WHERE name='Members' AND xtype='U')
                 BEGIN
@@ -57,8 +69,7 @@ namespace GymTrack
                     INSERT INTO MembershipPlans VALUES ('Annual', 12, 4000);
                 END";
 
-                SqlCommand cmd = new SqlCommand(sql, conn);
-                cmd.ExecuteNonQuery();
+                new SqlCommand(createTables, conn).ExecuteNonQuery();
             }
         }
     }
