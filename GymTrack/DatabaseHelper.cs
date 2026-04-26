@@ -67,10 +67,37 @@ namespace GymTrack
                     INSERT INTO MembershipPlans VALUES ('Monthly', 1, 500);
                     INSERT INTO MembershipPlans VALUES ('Quarterly', 3, 1200);
                     INSERT INTO MembershipPlans VALUES ('Annual', 12, 4000);
+
+                    CREATE TABLE Payments (
+                        PaymentID   INT PRIMARY KEY IDENTITY(1,1),
+                        SubID       INT REFERENCES Subscriptions(SubID),
+                        AmountPaid  DECIMAL(10,2),
+                        PaymentDate DATE DEFAULT GETDATE()
+                    );
                 END";
 
                 new SqlCommand(createTables, conn).ExecuteNonQuery();
             }
         }
+        public static void CreatePaymentsTable()
+        {
+            using (var conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+                string sql = @"
+            IF NOT EXISTS (SELECT * FROM sysobjects 
+                           WHERE name='Payments' AND xtype='U')
+            BEGIN
+                CREATE TABLE Payments (
+                    PaymentID   INT PRIMARY KEY IDENTITY(1,1),
+                    SubID       INT REFERENCES Subscriptions(SubID),
+                    AmountPaid  DECIMAL(10,2),
+                    PaymentDate DATE DEFAULT GETDATE()
+                )
+            END";
+                new SqlCommand(sql, conn).ExecuteNonQuery();
+            }
+        }
     }
+
 }

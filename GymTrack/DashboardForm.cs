@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
+using Microsoft.Data.SqlClient;
 
 namespace GymTrack
 {
     public partial class DashboardForm : Form
     {
+        private TableLayoutPanel statPanel;
+
         public DashboardForm()
         {
             InitializeComponent();
             BuildUI();
+            LoadDashboardCounts();
         }
 
         private void BuildUI()
@@ -20,7 +24,7 @@ namespace GymTrack
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = Color.FromArgb(245, 247, 250);
 
-            // ROOT LAYOUT: Sidebar | Main
+            // ROOT LAYOUT
             TableLayoutPanel root = new TableLayoutPanel();
             root.Dock = DockStyle.Fill;
             root.ColumnCount = 2;
@@ -69,7 +73,6 @@ namespace GymTrack
             AddSidebarBtn(sidebar, "Payments", 245, false);
             AddSidebarBtn(sidebar, "Reports", 290, false);
 
-            // Admin info at bottom
             Label lblAdmin = new Label();
             lblAdmin.Text = "Admin";
             lblAdmin.Font = new Font("Arial", 10, FontStyle.Bold);
@@ -109,11 +112,11 @@ namespace GymTrack
             main.Dock = DockStyle.Fill;
             main.ColumnCount = 1;
             main.RowCount = 5;
-            main.RowStyles.Add(new RowStyle(SizeType.Absolute, 65));   // topbar
-            main.RowStyles.Add(new RowStyle(SizeType.Absolute, 130));  // stats
-            main.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));   // label
-            main.RowStyles.Add(new RowStyle(SizeType.Absolute, 160));  // actions
-            main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));   // table
+            main.RowStyles.Add(new RowStyle(SizeType.Absolute, 65));
+            main.RowStyles.Add(new RowStyle(SizeType.Absolute, 130));
+            main.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));
+            main.RowStyles.Add(new RowStyle(SizeType.Absolute, 160));
+            main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             main.Padding = new Padding(0);
             main.Margin = new Padding(0);
             main.BackColor = Color.FromArgb(245, 247, 250);
@@ -143,8 +146,8 @@ namespace GymTrack
             lblDate.Location = new Point(600, 22);
             topBar.Controls.Add(lblDate);
 
-            // STAT CARDS using TableLayoutPanel
-            TableLayoutPanel statPanel = new TableLayoutPanel();
+            // STAT CARDS
+            statPanel = new TableLayoutPanel();
             statPanel.Dock = DockStyle.Fill;
             statPanel.ColumnCount = 4;
             statPanel.RowCount = 1;
@@ -312,8 +315,91 @@ namespace GymTrack
             dgv.Columns.Add("Plan", "Plan");
             dgv.Columns.Add("Start", "Start Date");
             dgv.Columns.Add("Status", "Status");
-            dgv.Rows.Add("No records yet", "", "", "");
             tableContainer.Controls.Add(dgv);
+
+            LoadRecentMembers(dgv);
+        }
+
+        private void LoadDashboardCounts()
+        {
+            try
+            {
+                using (var conn = DatabaseHelper.GetConnection())
+                {
+                    conn.Open();
+
+                    int total = Convert.ToInt32(new SqlCommand(
+                        "SELECT COUNT(*) FROM Members", conn).ExecuteScalar());
+
+                    int active = Convert.ToInt32(new SqlCommand(
+                        "SELECT COUNT(*) FROM Subscriptions WHERE Status='Active'",
+                        conn).ExecuteScalar());
+
+                    int expired = Convert.ToInt32(new SqlCommand(
+                        "SELECT COUNT(*) FROM Subscriptions WHERE Status='Expired'",
+                        conn).ExecuteScalar());
+
+                    int thisMonth = Convert.ToInt32(new SqlCommand(
+                        @"SELECT COUNT(*) FROM Members 
+                          WHERE MONTH(DateJoined)=MONTH(GETDATE()) 
+                          AND YEAR(DateJoined)=YEAR(GETDATE())",
+                        conn).ExecuteScalar());
+
+                    UpdateStatCard(0, total.ToString());
+                    UpdateStatCard(1, active.ToString());
+                    UpdateStatCard(2, expired.ToString());
+                    UpdateStatCard(3, thisMonth.ToString());
+                }
+            }
+            catch { }
+        }
+
+        private void UpdateStatCard(int index, string value)
+        {
+            if (statPanel == null) return;
+            if (index < statPanel.Controls.Count)
+            {
+                Panel card = (Panel)statPanel.Controls[index];
+                if (card.Controls.Count > 0)
+                    card.Controls[0].Text = value;
+            }
+        }
+
+        private void LoadRecentMembers(DataGridView dgv)
+        {
+            try
+            {
+                using (var conn = DatabaseHelper.GetConnection())
+                {
+                    conn.Open();
+                    string sql = @"
+                        SELECT TOP 5
+                               m.FirstName + ' ' + m.LastName AS FullName,
+                               p.PlanName, s.StartDate, s.Status
+                        FROM Members m
+                        LEFT JOIN Subscriptions s ON m.MemberID = s.MemberID
+                        LEFT JOIN MembershipPlans p ON s.PlanID = p.PlanID
+                        ORDER BY m.MemberID DESC";
+
+                    SqlCommand cmd = new SqlCommand(sql, conn);
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        dgv.Rows.Add(
+                            reader["FullName"],
+                            reader["PlanName"],
+                            Convert.ToDateTime(reader["StartDate"]).ToString("MM/dd/yyyy"),
+                            reader["Status"]
+                        );
+                    }
+                    if (dgv.Rows.Count == 0)
+                        dgv.Rows.Add("No records yet", "", "", "");
+                }
+            }
+            catch
+            {
+                dgv.Rows.Add("No records yet", "", "", "");
+            }
         }
 
         private void AddSidebarBtn(Panel sidebar, string text, int y, bool active)
@@ -336,6 +422,7 @@ namespace GymTrack
         {
             MemberRegistrationForm regForm = new MemberRegistrationForm();
             regForm.ShowDialog();
+            LoadDashboardCounts();
         }
 
         private void BtnView_Click(object sender, EventArgs e)
@@ -346,7 +433,8 @@ namespace GymTrack
 
         private void BtnPayments_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Payments - Coming Soon!");
+            PaymentsForm paymentsForm = new PaymentsForm();
+            paymentsForm.ShowDialog();
         }
     }
 }

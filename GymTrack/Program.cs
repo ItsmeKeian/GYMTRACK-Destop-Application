@@ -14,6 +14,7 @@ namespace GymTrack
             try
             {
                 DatabaseHelper.InitializeDatabase();
+                DatabaseHelper.CreatePaymentsTable();
             }
             catch
             {
