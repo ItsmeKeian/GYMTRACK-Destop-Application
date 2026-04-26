@@ -340,7 +340,8 @@ namespace GymTrack
 
         private void BtnView_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("View Members - Coming Soon!");
+            ViewMembersForm viewForm = new ViewMembersForm();
+            viewForm.ShowDialog();
         }
 
         private void BtnPayments_Click(object sender, EventArgs e)
