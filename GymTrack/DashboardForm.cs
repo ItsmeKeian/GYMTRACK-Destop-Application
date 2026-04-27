@@ -8,12 +8,14 @@ namespace GymTrack
     public partial class DashboardForm : Form
     {
         private TableLayoutPanel statPanel;
+        private DataGridView dgvRecent;
 
         public DashboardForm()
         {
             InitializeComponent();
             BuildUI();
             LoadDashboardCounts();
+            LoadRecentMembers();
         }
 
         private void BuildUI()
@@ -67,19 +69,28 @@ namespace GymTrack
             divLine.BackColor = Color.FromArgb(60, 60, 90);
             sidebar.Controls.Add(divLine);
 
-            AddSidebarBtn(sidebar, "Dashboard", 110, true);
-            AddSidebarBtn(sidebar, "Register Member", 155, false);
-            AddSidebarBtn(sidebar, "View Members", 200, false);
-            AddSidebarBtn(sidebar, "Payments", 245, false);
-            AddSidebarBtn(sidebar, "Reports", 290, false);
+            // Sidebar buttons — all connected!
+            AddSidebarBtn(sidebar, "Dashboard", 110, true, null);
+            AddSidebarBtn(sidebar, "Register Member", 155, false, BtnRegister_Click);
+            AddSidebarBtn(sidebar, "View Members", 200, false, BtnView_Click);
+            AddSidebarBtn(sidebar, "Payments", 245, false, BtnPayments_Click);
+            AddSidebarBtn(sidebar, "Reports", 290, false, BtnReports_Click);
 
+            // Divider bottom
+            Panel divBottom = new Panel();
+            divBottom.Size = new Size(180, 1);
+            divBottom.Location = new Point(20, 540);
+            divBottom.BackColor = Color.FromArgb(60, 60, 90);
+            sidebar.Controls.Add(divBottom);
+
+            // Admin info
             Label lblAdmin = new Label();
             lblAdmin.Text = "Admin";
             lblAdmin.Font = new Font("Arial", 10, FontStyle.Bold);
             lblAdmin.ForeColor = Color.White;
             lblAdmin.AutoSize = true;
             lblAdmin.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            lblAdmin.Location = new Point(25, 560);
+            lblAdmin.Location = new Point(25, 555);
             sidebar.Controls.Add(lblAdmin);
 
             Label lblRole = new Label();
@@ -88,17 +99,17 @@ namespace GymTrack
             lblRole.ForeColor = Color.FromArgb(150, 150, 180);
             lblRole.AutoSize = true;
             lblRole.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            lblRole.Location = new Point(25, 582);
+            lblRole.Location = new Point(25, 575);
             sidebar.Controls.Add(lblRole);
 
             Button btnLogout = new Button();
-            btnLogout.Text = "Logout";
-            btnLogout.Size = new Size(170, 35);
-            btnLogout.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnLogout.Location = new Point(25, 608);
+            btnLogout.Text = "  Logout";
+            btnLogout.Size = new Size(220, 42);
+            btnLogout.Location = new Point(0, 608);
+            btnLogout.TextAlign = ContentAlignment.MiddleLeft;
             btnLogout.BackColor = Color.FromArgb(230, 57, 70);
             btnLogout.ForeColor = Color.White;
-            btnLogout.Font = new Font("Arial", 9, FontStyle.Bold);
+            btnLogout.Font = new Font("Arial", 10, FontStyle.Bold);
             btnLogout.FlatStyle = FlatStyle.Flat;
             btnLogout.FlatAppearance.BorderSize = 0;
             btnLogout.Cursor = Cursors.Hand;
@@ -292,32 +303,51 @@ namespace GymTrack
             lblRecent.Location = new Point(20, 5);
             tableContainer.Controls.Add(lblRecent);
 
-            DataGridView dgv = new DataGridView();
-            dgv.Anchor = AnchorStyles.Top | AnchorStyles.Bottom |
-                         AnchorStyles.Left | AnchorStyles.Right;
-            dgv.Location = new Point(20, 30);
-            dgv.Size = new Size(tableContainer.Width - 40, tableContainer.Height - 50);
-            dgv.BackgroundColor = Color.White;
-            dgv.BorderStyle = BorderStyle.None;
-            dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(26, 26, 46);
-            dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Arial", 9, FontStyle.Bold);
-            dgv.ColumnHeadersHeight = 36;
-            dgv.RowTemplate.Height = 32;
-            dgv.ReadOnly = true;
-            dgv.AllowUserToAddRows = false;
-            dgv.GridColor = Color.FromArgb(230, 230, 240);
-            dgv.DefaultCellStyle.Font = new Font("Arial", 9);
-            dgv.RowHeadersVisible = false;
-            dgv.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            dgv.Columns.Add("Name", "Member Name");
-            dgv.Columns.Add("Plan", "Plan");
-            dgv.Columns.Add("Start", "Start Date");
-            dgv.Columns.Add("Status", "Status");
-            tableContainer.Controls.Add(dgv);
+            dgvRecent = new DataGridView();
+            dgvRecent.Anchor = AnchorStyles.Top | AnchorStyles.Bottom |
+                               AnchorStyles.Left | AnchorStyles.Right;
+            dgvRecent.Location = new Point(20, 30);
+            dgvRecent.Size = new Size(tableContainer.Width - 40, tableContainer.Height - 50);
+            dgvRecent.BackgroundColor = Color.White;
+            dgvRecent.BorderStyle = BorderStyle.None;
+            dgvRecent.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(26, 26, 46);
+            dgvRecent.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            dgvRecent.ColumnHeadersDefaultCellStyle.Font = new Font("Arial", 9, FontStyle.Bold);
+            dgvRecent.ColumnHeadersHeight = 36;
+            dgvRecent.RowTemplate.Height = 32;
+            dgvRecent.ReadOnly = true;
+            dgvRecent.AllowUserToAddRows = false;
+            dgvRecent.GridColor = Color.FromArgb(230, 230, 240);
+            dgvRecent.DefaultCellStyle.Font = new Font("Arial", 9);
+            dgvRecent.RowHeadersVisible = false;
+            dgvRecent.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvRecent.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvRecent.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 249, 255);
+            dgvRecent.Columns.Add("Name", "Member Name");
+            dgvRecent.Columns.Add("Plan", "Plan");
+            dgvRecent.Columns.Add("Start", "Start Date");
+            dgvRecent.Columns.Add("Status", "Status");
+            tableContainer.Controls.Add(dgvRecent);
+        }
 
-            LoadRecentMembers(dgv);
+        private void AddSidebarBtn(Panel sidebar, string text, int y, bool active, EventHandler handler)
+        {
+            Button btn = new Button();
+            btn.Text = "  " + text;
+            btn.Size = new Size(220, 40);
+            btn.Location = new Point(0, y);
+            btn.TextAlign = ContentAlignment.MiddleLeft;
+            btn.Font = new Font("Arial", 10);
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderSize = 0;
+            btn.Cursor = Cursors.Hand;
+            btn.BackColor = active ? Color.FromArgb(67, 97, 238) : Color.Transparent;
+            btn.ForeColor = active ? Color.White : Color.FromArgb(180, 180, 210);
+
+            if (handler != null)
+                btn.Click += handler;
+
+            sidebar.Controls.Add(btn);
         }
 
         private void LoadDashboardCounts()
@@ -365,8 +395,9 @@ namespace GymTrack
             }
         }
 
-        private void LoadRecentMembers(DataGridView dgv)
+        private void LoadRecentMembers()
         {
+            dgvRecent.Rows.Clear();
             try
             {
                 using (var conn = DatabaseHelper.GetConnection())
@@ -381,41 +412,38 @@ namespace GymTrack
                         LEFT JOIN MembershipPlans p ON s.PlanID = p.PlanID
                         ORDER BY m.MemberID DESC";
 
-                    SqlCommand cmd = new SqlCommand(sql, conn);
-                    SqlDataReader reader = cmd.ExecuteReader();
+                    SqlDataReader reader = new SqlCommand(sql, conn).ExecuteReader();
+                    int count = 0;
                     while (reader.Read())
                     {
-                        dgv.Rows.Add(
+                        string status = reader["Status"].ToString();
+                        int row = dgvRecent.Rows.Add(
                             reader["FullName"],
                             reader["PlanName"],
                             Convert.ToDateTime(reader["StartDate"]).ToString("MM/dd/yyyy"),
-                            reader["Status"]
+                            status
                         );
+
+                        // Color status
+                        Color statusColor = status == "Active" ?
+                            Color.FromArgb(46, 196, 182) :
+                            status == "Expired" ?
+                            Color.FromArgb(230, 57, 70) :
+                            Color.FromArgb(247, 127, 0);
+
+                        dgvRecent.Rows[row].Cells["Status"].Style.ForeColor = statusColor;
+                        dgvRecent.Rows[row].Cells["Status"].Style.Font =
+                            new Font("Arial", 9, FontStyle.Bold);
+                        count++;
                     }
-                    if (dgv.Rows.Count == 0)
-                        dgv.Rows.Add("No records yet", "", "", "");
+                    if (count == 0)
+                        dgvRecent.Rows.Add("No records yet", "", "", "");
                 }
             }
             catch
             {
-                dgv.Rows.Add("No records yet", "", "", "");
+                dgvRecent.Rows.Add("No records yet", "", "", "");
             }
-        }
-
-        private void AddSidebarBtn(Panel sidebar, string text, int y, bool active)
-        {
-            Button btn = new Button();
-            btn.Text = "  " + text;
-            btn.Size = new Size(220, 40);
-            btn.Location = new Point(0, y);
-            btn.TextAlign = ContentAlignment.MiddleLeft;
-            btn.Font = new Font("Arial", 10);
-            btn.FlatStyle = FlatStyle.Flat;
-            btn.FlatAppearance.BorderSize = 0;
-            btn.Cursor = Cursors.Hand;
-            btn.BackColor = active ? Color.FromArgb(67, 97, 238) : Color.Transparent;
-            btn.ForeColor = active ? Color.White : Color.FromArgb(180, 180, 210);
-            sidebar.Controls.Add(btn);
         }
 
         private void BtnRegister_Click(object sender, EventArgs e)
@@ -423,18 +451,29 @@ namespace GymTrack
             MemberRegistrationForm regForm = new MemberRegistrationForm();
             regForm.ShowDialog();
             LoadDashboardCounts();
+            LoadRecentMembers();
         }
 
         private void BtnView_Click(object sender, EventArgs e)
         {
             ViewMembersForm viewForm = new ViewMembersForm();
             viewForm.ShowDialog();
+            LoadDashboardCounts();
+            LoadRecentMembers();
         }
 
         private void BtnPayments_Click(object sender, EventArgs e)
         {
             PaymentsForm paymentsForm = new PaymentsForm();
             paymentsForm.ShowDialog();
+            LoadDashboardCounts();
+        }
+
+        private void BtnReports_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Reports - Coming Soon!",
+                "GymTrack", MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         }
     }
 }
